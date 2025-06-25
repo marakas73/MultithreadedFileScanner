@@ -1,4 +1,4 @@
-package org.marakas73.core;
+package org.marakas73.service.util;
 
 import org.springframework.stereotype.Component;
 

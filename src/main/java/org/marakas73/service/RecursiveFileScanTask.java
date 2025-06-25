@@ -1,4 +1,6 @@
-package org.marakas73.core;
+package org.marakas73.service;
+
+import org.marakas73.service.util.FileNamePatternMatcher;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
