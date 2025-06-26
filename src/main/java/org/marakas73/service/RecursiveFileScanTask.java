@@ -1,7 +1,9 @@
 package org.marakas73.service;
 
-import org.marakas73.service.util.FileNamePatternMatcher;
+import org.marakas73.model.FileScanFilter;
+import org.marakas73.service.util.FileScanFilterMatcher;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -10,37 +12,42 @@ import java.util.concurrent.RecursiveTask;
 import java.util.stream.Stream;
 
 public class RecursiveFileScanTask extends RecursiveTask<List<Path>> {
-    private final FileNamePatternMatcher fileNamePatternMatcher;
+    private final FileScanFilterMatcher fileScanFilterMatcher;
 
-    private final Path path;
-    private final String pattern;
+    private final Path targetPath;
+    private final FileScanFilter scanFilter;
 
     public RecursiveFileScanTask(
-            FileNamePatternMatcher fileNamePatternMatcher,
-            Path path,
-            String pattern
+            FileScanFilterMatcher fileScanFilterMatcher,
+            Path targetPath,
+            FileScanFilter scanFilter
     ) {
-        this.fileNamePatternMatcher = fileNamePatternMatcher;
-        this.path = path;
-        this.pattern = pattern;
+        this.fileScanFilterMatcher = fileScanFilterMatcher;
+        this.targetPath = targetPath;
+        this.scanFilter = scanFilter;
     }
+
 
     @Override
     protected List<Path> compute() {
-        try(Stream<Path> directoryMembers = Files.list(path)) {
+        try(Stream<Path> directoryMembers = Files.list(targetPath)) {
             List<RecursiveFileScanTask> subTasks = new ArrayList<>();
             List<Path> scannedFilePaths = new ArrayList<>();
 
             directoryMembers.forEach(member -> {
                 if (Files.isRegularFile(member)) {
-                    if (fileNamePatternMatcher.matches(member.getFileName().toString(), pattern)) {
-                        scannedFilePaths.add(member.toAbsolutePath());
+                    try {
+                        if (fileScanFilterMatcher.matches(member.toAbsolutePath(), scanFilter)) {
+                            scannedFilePaths.add(member.toAbsolutePath());
+                        }
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
                     }
                 } else if (Files.isDirectory(member)) {
                     var subTask = new RecursiveFileScanTask(
-                            fileNamePatternMatcher,
+                            fileScanFilterMatcher,
                             member.toAbsolutePath(),
-                            pattern
+                            scanFilter
                     );
                     subTasks.add(subTask);
                     subTask.fork();

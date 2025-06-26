@@ -1,55 +1,41 @@
 package org.marakas73.controller;
 
-import org.marakas73.dto.FileScanResponseDto;
-import org.marakas73.dto.ResponseStatus;
+import jakarta.validation.Valid;
+import org.marakas73.controller.dto.response.ResponseWrapper;
+import org.marakas73.controller.mapper.FileScanRequestMapper;
+import org.marakas73.controller.dto.request.FileScanRequestDto;
+import org.marakas73.controller.dto.response.FileScanResponseDto;
+import org.marakas73.controller.dto.response.ResponseStatus;
+import org.marakas73.model.FileScanRequest;
 import org.marakas73.service.FileScanner;
-import org.marakas73.service.validation.FileScannerParamsValidator;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("api")
 public class FileScannerHttpController {
     private final FileScanner fileScanner;
-    private final FileScannerParamsValidator scannerParamsValidator;
+    private final FileScanRequestMapper fileScanRequestMapper;
 
-    public FileScannerHttpController(FileScanner fileScanner, FileScannerParamsValidator scannerParamsValidator) {
+    public FileScannerHttpController(FileScanner fileScanner, FileScanRequestMapper fileScanRequestMapper) {
         this.fileScanner = fileScanner;
-        this.scannerParamsValidator = scannerParamsValidator;
+        this.fileScanRequestMapper = fileScanRequestMapper;
     }
 
-    @GetMapping("filescan")
-    public ResponseEntity<FileScanResponseDto> fileScan(
-            @RequestParam(name = "path") String directoryPath,
-            @RequestParam(name = "pattern") String pattern,
-            @RequestParam(name = "threads-count", required = false) Integer threadsCount
+    @PostMapping("filescan")
+    public ResponseEntity<ResponseWrapper<FileScanResponseDto>> fileScan(
+            @Valid @RequestBody FileScanRequestDto requestDto
     ) {
-        if(!scannerParamsValidator.isPathValid(directoryPath)) {
-            return ResponseEntity.badRequest().body(new FileScanResponseDto(ResponseStatus.ERROR, List.of()));
-        }
-
         try{
-            Path path = Paths.get(directoryPath);
-            FileScanResponseDto responseBody;
+            FileScanRequest scanRequest = fileScanRequestMapper.toModel(requestDto);
+            FileScanResponseDto scanResponse = new FileScanResponseDto(fileScanner.scan(scanRequest));
 
-            if(threadsCount == null) { // With default threads count
-                responseBody = new FileScanResponseDto(ResponseStatus.SUCCESS, fileScanner.scan(path, pattern));
-            } else { // With custom threads count
-                responseBody = new FileScanResponseDto(
-                        ResponseStatus.SUCCESS,
-                        fileScanner.scan(path, pattern, threadsCount)
-                );
-            }
-            return ResponseEntity.ok().body(responseBody);
+            return ResponseEntity.ok().body(new ResponseWrapper<>(ResponseStatus.SUCCESS, Map.of(), scanResponse));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(new FileScanResponseDto(ResponseStatus.ERROR, List.of()));
+            Map<String, String> error = Map.of(e.getClass().getName(), e.getMessage());
+            return ResponseEntity.badRequest().body(new ResponseWrapper<>(ResponseStatus.ERROR, error, null));
         }
     }
 }
