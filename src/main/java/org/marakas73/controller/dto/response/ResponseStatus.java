@@ -1,4 +1,4 @@
-package org.marakas73.dto;
+package org.marakas73.controller.dto.response;
 
 public enum ResponseStatus {
     SUCCESS,
