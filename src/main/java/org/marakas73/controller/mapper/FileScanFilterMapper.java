@@ -1,6 +1,6 @@
 package org.marakas73.controller.mapper;
 
-import org.marakas73.common.IntervalWrapper;
+import org.marakas73.common.util.IntervalWrapper;
 import org.marakas73.controller.dto.request.FileScanFilterDto;
 import org.marakas73.model.FileScanFilter;
 import org.springframework.stereotype.Component;

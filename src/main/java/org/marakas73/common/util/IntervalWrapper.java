@@ -1,4 +1,4 @@
-package org.marakas73.common;
+package org.marakas73.common.util;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.annotation.Nullable;

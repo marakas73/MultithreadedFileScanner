@@ -2,7 +2,7 @@ package org.marakas73.controller.dto.request;
 
 import jakarta.annotation.Nullable;
 import jakarta.validation.constraints.Size;
-import org.marakas73.common.IntervalWrapper;
+import org.marakas73.common.util.IntervalWrapper;
 
 public record FileScanFilterDto(
         @Nullable

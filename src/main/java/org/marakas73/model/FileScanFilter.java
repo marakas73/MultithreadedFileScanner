@@ -1,7 +1,7 @@
 package org.marakas73.model;
 
 import jakarta.annotation.Nullable;
-import org.marakas73.common.IntervalWrapper;
+import org.marakas73.common.util.IntervalWrapper;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
