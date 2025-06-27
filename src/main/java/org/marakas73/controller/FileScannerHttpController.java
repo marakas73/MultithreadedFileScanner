@@ -7,7 +7,7 @@ import org.marakas73.controller.dto.request.FileScanRequestDto;
 import org.marakas73.controller.dto.response.FileScanResponseDto;
 import org.marakas73.controller.dto.response.ResponseStatus;
 import org.marakas73.model.FileScanRequest;
-import org.marakas73.service.FileScanner;
+import org.marakas73.service.filescanner.FileScanner;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 

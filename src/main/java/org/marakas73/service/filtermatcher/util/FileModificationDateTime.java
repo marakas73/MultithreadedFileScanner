@@ -1,4 +1,4 @@
-package org.marakas73.service.util;
+package org.marakas73.service.filtermatcher.util;
 
 import java.io.IOException;
 import java.nio.file.Files;

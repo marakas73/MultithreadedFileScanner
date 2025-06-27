@@ -1,7 +1,7 @@
-package org.marakas73.service;
+package org.marakas73.service.filescanner;
 
 import org.marakas73.model.FileScanFilter;
-import org.marakas73.service.util.FileScanFilterMatcher;
+import org.marakas73.service.filtermatcher.FileScanFilterMatcher;
 
 import java.nio.file.Files;
 import java.nio.file.Path;

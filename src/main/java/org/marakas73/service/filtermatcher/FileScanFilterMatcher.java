@@ -1,7 +1,8 @@
-package org.marakas73.service.util;
+package org.marakas73.service.filtermatcher;
 
 import org.marakas73.model.FileScanFilter;
-import org.springframework.stereotype.Component;
+import org.marakas73.service.filtermatcher.util.FileModificationDateTime;
+import org.springframework.stereotype.Service;
 
 import java.io.File;
 import java.io.IOException;
@@ -10,7 +11,7 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.regex.Pattern;
 
-@Component
+@Service
 public class FileScanFilterMatcher {
     public boolean matches(Path filePath, FileScanFilter filter) throws IOException {
         if(filter == null) {
