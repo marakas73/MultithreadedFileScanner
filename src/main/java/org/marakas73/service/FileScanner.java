@@ -32,6 +32,8 @@ public class FileScanner {
                     scanRequest.scanFilter()
             );
             return pool.invoke(fileScanTask);
+        } catch (IllegalArgumentException iae) {
+            throw new IllegalArgumentException("Threads count number way too big: " + threadsCount);
         }
     }
 }
