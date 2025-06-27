@@ -33,8 +33,11 @@ public class FileScannerHttpController {
             FileScanResponseDto scanResponse = new FileScanResponseDto(fileScanner.scan(scanRequest));
 
             return ResponseEntity.ok().body(new ResponseWrapper<>(ResponseStatus.SUCCESS, Map.of(), scanResponse));
-        } catch (Exception e) {
-            Map<String, String> error = Map.of(e.getClass().getName(), e.getMessage());
+        } catch (RuntimeException e) {
+            Map<String, String> error = Map.of(
+                    e.getClass().getSimpleName(),
+                    e.getMessage() == null ? "" : e.getMessage()
+            );
             return ResponseEntity.badRequest().body(new ResponseWrapper<>(ResponseStatus.ERROR, error, null));
         }
     }
