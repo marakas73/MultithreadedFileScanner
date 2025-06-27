@@ -6,7 +6,7 @@ import org.marakas73.common.IntervalWrapper;
 
 public record FileScanFilterDto(
         @Nullable
-        @Size(min = 1, message = "Pattern cannot be empty")
+        @Size(min = 1, message = "Filename pattern cannot be empty")
         String namePattern,
 
         @Nullable
@@ -16,6 +16,10 @@ public record FileScanFilterDto(
         IntervalWrapper<String> lastModifiedDateInterval,
 
         @Nullable
-        IntervalWrapper<String> lastModifiedTimeInterval
+        IntervalWrapper<String> lastModifiedTimeInterval,
+
+        @Nullable
+        @Size(min = 1, message = "Text content pattern cannot be empty")
+        String textContentPattern
 ) {
 }

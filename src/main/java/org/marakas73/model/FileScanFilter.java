@@ -10,6 +10,7 @@ public record FileScanFilter(
         @Nullable String namePattern,
         @Nullable IntervalWrapper<Long> sizeInBytesInterval,
         @Nullable IntervalWrapper<LocalDate> lastModifiedDateInterval,
-        @Nullable IntervalWrapper<LocalTime> lastModifiedTimeInterval
+        @Nullable IntervalWrapper<LocalTime> lastModifiedTimeInterval,
+        @Nullable String textContentPattern
 ) {
 }

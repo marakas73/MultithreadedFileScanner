@@ -37,7 +37,8 @@ public class FileScanFilterMapper {
                 dto.namePattern(),
                 sizeInBytesInterval,
                 lastModifiedDateInterval,
-                lastModifiedTimeInterval
+                lastModifiedTimeInterval,
+                dto.textContentPattern()
         );
     }
 }
