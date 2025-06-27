@@ -3,7 +3,6 @@ package org.marakas73.service;
 import org.marakas73.model.FileScanFilter;
 import org.marakas73.service.util.FileScanFilterMatcher;
 
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -27,21 +26,16 @@ public class RecursiveFileScanTask extends RecursiveTask<List<Path>> {
         this.scanFilter = scanFilter;
     }
 
-
     @Override
     protected List<Path> compute() {
         try(Stream<Path> directoryMembers = Files.list(targetPath)) {
             List<RecursiveFileScanTask> subTasks = new ArrayList<>();
             List<Path> scannedFilePaths = new ArrayList<>();
 
-            directoryMembers.forEach(member -> {
+            for(var member : directoryMembers.toList()) {
                 if (Files.isRegularFile(member)) {
-                    try {
-                        if (fileScanFilterMatcher.matches(member.toAbsolutePath(), scanFilter)) {
-                            scannedFilePaths.add(member.toAbsolutePath());
-                        }
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
+                    if (fileScanFilterMatcher.matches(member.toAbsolutePath(), scanFilter)) {
+                        scannedFilePaths.add(member.toAbsolutePath());
                     }
                 } else if (Files.isDirectory(member)) {
                     var subTask = new RecursiveFileScanTask(
@@ -52,7 +46,7 @@ public class RecursiveFileScanTask extends RecursiveTask<List<Path>> {
                     subTasks.add(subTask);
                     subTask.fork();
                 }
-            });
+            }
 
             subTasks.forEach(subTask -> scannedFilePaths.addAll(subTask.join()));
             return scannedFilePaths;
