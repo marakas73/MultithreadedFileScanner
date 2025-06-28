@@ -34,5 +34,7 @@ public class FileScannerProperties {
         if(streamFileSizeLimit > safeFileSize) {
             throw new IllegalArgumentException("Stream file size limit more than allowed space in memory");
         }
+
+        this.streamFileSizeLimit = streamFileSizeLimit;
     }
 }
