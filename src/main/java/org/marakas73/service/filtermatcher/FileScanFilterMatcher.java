@@ -4,7 +4,6 @@ import org.marakas73.common.util.IntervalWrapper;
 import org.marakas73.common.util.SupportedTextFileFormats;
 import org.marakas73.config.FileScannerProperties;
 import org.marakas73.model.FileScanFilter;
-import org.marakas73.service.filescanner.exception.InconsistentFilterException;
 import org.marakas73.service.filtermatcher.util.FileModificationDateTime;
 import org.springframework.stereotype.Service;
 
@@ -93,7 +92,8 @@ public class FileScanFilterMatcher {
         }
 
         if (!SupportedTextFileFormats.isTextFile(filePath.getFileName().toString())) {
-            throw new InconsistentFilterException("Text content pattern can be apply only for text files");
+            // Text content pattern can be applied only for text files
+            return false;
         }
 
         try {
