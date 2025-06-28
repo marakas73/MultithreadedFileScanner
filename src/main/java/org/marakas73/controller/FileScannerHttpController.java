@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
 @RestController
-@RequestMapping("api")
+@RequestMapping("api/file-scanner")
 public class FileScannerHttpController {
     private final FileScanner fileScanner;
     private final FileScanRequestMapper fileScanRequestMapper;
@@ -24,8 +24,8 @@ public class FileScannerHttpController {
         this.fileScanRequestMapper = fileScanRequestMapper;
     }
 
-    @PostMapping("filescan")
-    public ResponseEntity<ResponseWrapper<FileScanResponseDto>> fileScan(
+    @PostMapping("scan")
+    public ResponseEntity<ResponseWrapper<FileScanResponseDto>> scan(
             @Valid @RequestBody FileScanRequestDto requestDto
     ) {
         try{
