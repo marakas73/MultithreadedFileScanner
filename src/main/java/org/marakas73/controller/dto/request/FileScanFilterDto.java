@@ -20,6 +20,6 @@ public record FileScanFilterDto(
 
         @Nullable
         @Size(min = 1, message = "Text content pattern cannot be empty")
-        String textContentPattern
+        String textContent
 ) {
 }

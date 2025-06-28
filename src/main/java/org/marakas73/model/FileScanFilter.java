@@ -11,6 +11,6 @@ public record FileScanFilter(
         @Nullable IntervalWrapper<Long> sizeInBytesInterval,
         @Nullable IntervalWrapper<LocalDate> lastModifiedDateInterval,
         @Nullable IntervalWrapper<LocalTime> lastModifiedTimeInterval,
-        @Nullable String textContentPattern
+        @Nullable String textContent
 ) {
 }
