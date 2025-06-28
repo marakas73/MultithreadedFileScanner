@@ -7,10 +7,15 @@ import org.springframework.stereotype.Component;
 @ConfigurationProperties(prefix = "scanner")
 public class FileScannerProperties {
     private int threadsCount;
+    private long streamFileSizeLimit;
 
     public int getThreadsCount() {
-        return threadsCount;
+        return this.threadsCount;
     }
+    public long getStreamFileSizeLimit() {
+        return this.streamFileSizeLimit;
+    }
+
     public void setThreadsCount(int threadsCount) {
         if(threadsCount <= 0) {
             throw new IllegalArgumentException("Threads count must be more than 0");
@@ -20,5 +25,14 @@ public class FileScannerProperties {
         }
 
         this.threadsCount = threadsCount;
+    }
+    public void setStreamFileSizeLimit(long streamFileSizeLimit) {
+        long freeMemory = Runtime.getRuntime().freeMemory();
+        // Approximately safe memory with think of UTF-16 and overhead
+        long safeFileSize = (freeMemory / 3);
+
+        if(streamFileSizeLimit > safeFileSize) {
+            throw new IllegalArgumentException("Stream file size limit more than allowed space in memory");
+        }
     }
 }
