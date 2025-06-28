@@ -1,5 +1,6 @@
 package org.marakas73.service.filescanner;
 
+import org.marakas73.common.util.SupportedTextFileFormats;
 import org.marakas73.config.FileScannerProperties;
 import org.marakas73.model.FileScanRequest;
 import org.marakas73.service.filescanner.exception.InconsistentFilterException;
@@ -21,10 +22,23 @@ public class FileScanner {
         this.properties = properties;
     }
 
+    /**
+     * @throws InconsistentFilterException if text content pattern filter provided but
+     * target file extension in filename pattern is not the text file.
+     * @throws IllegalArgumentException if threads count more than allowed in ForkJoinPool.
+     */
     public List<Path> scan(FileScanRequest scanRequest) {
         // Get threads count if provided else use number from properties
         int threadsCount = scanRequest.threadsCount() != null ?
                 scanRequest.threadsCount() : properties.getThreadsCount();
+
+        // If filter has text content filtering param need to check if name pattern
+        if(scanRequest.scanFilter() != null) {
+            var filter = scanRequest.scanFilter();
+            if(filter.textContent() != null && !SupportedTextFileFormats.isTextFile(filter.namePattern())) {
+                throw new InconsistentFilterException("Text content pattern can be applied only for text files");
+            }
+        }
 
         try(var pool = new ForkJoinPool(threadsCount)) {
             var fileScanTask = new RecursiveFileScanTask(

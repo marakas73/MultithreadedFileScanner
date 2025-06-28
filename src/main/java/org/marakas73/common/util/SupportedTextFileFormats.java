@@ -32,4 +32,19 @@ public enum SupportedTextFileFormats {
     public String getExtension() {
         return this.extension;
     }
+
+    public static boolean isTextFile(String fileName) {
+        if (fileName == null) {
+            return false;
+        }
+
+        String lowerCaseName = fileName.toLowerCase();
+        for (SupportedTextFileFormats format : values()) {
+            if (lowerCaseName.endsWith("." + format.getExtension())) {
+                return true;
+            }
+        }
+
+        return false;
+    }
 }
