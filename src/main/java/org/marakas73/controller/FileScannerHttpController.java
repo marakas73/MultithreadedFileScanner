@@ -41,4 +41,15 @@ public class FileScannerHttpController {
             return ResponseEntity.badRequest().body(new ResponseWrapper<>(ResponseStatus.ERROR, error, null));
         }
     }
+
+    @GetMapping("kill")
+    public ResponseEntity<String> kill() {
+        try {
+            fileScanner.kill();
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(ResponseStatus.ERROR.name());
+        }
+
+        return ResponseEntity.ok().body(ResponseStatus.SUCCESS.name());
+    }
 }
