@@ -15,6 +15,8 @@ public class FileScanner {
     private final FileScanFilterMatcher patternMatcher;
     private final FileScannerProperties properties;
 
+    private ForkJoinPool pool = null;
+
     public FileScanner(FileScanFilterMatcher patternMatcher, FileScannerProperties properties) {
         this.patternMatcher = patternMatcher;
         this.properties = properties;
@@ -25,7 +27,8 @@ public class FileScanner {
         int threadsCount = scanRequest.threadsCount() != null ?
                 scanRequest.threadsCount() : properties.getThreadsCount();
 
-        try(var pool = new ForkJoinPool(threadsCount)) {
+        this.pool = new ForkJoinPool(threadsCount);
+        try {
             var fileScanTask = new RecursiveFileScanTask(
                     patternMatcher,
                     Paths.get(scanRequest.directoryPath()),
@@ -35,5 +38,14 @@ public class FileScanner {
         } catch (IllegalArgumentException iae) {
             throw new IllegalArgumentException("Threads count number way too big: " + threadsCount);
         }
+    }
+
+    public void kill() {
+        if(pool == null || pool.isShutdown()) {
+            return;
+        }
+
+        pool.shutdownNow();
+        pool = null;
     }
 }
