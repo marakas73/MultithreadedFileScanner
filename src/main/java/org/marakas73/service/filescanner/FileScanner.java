@@ -5,7 +5,6 @@ import org.marakas73.model.FileScanRequest;
 import org.marakas73.service.filtermatcher.FileScanFilterMatcher;
 import org.springframework.stereotype.Service;
 
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.concurrent.ForkJoinPool;
@@ -22,7 +21,7 @@ public class FileScanner {
         this.properties = properties;
     }
 
-    public List<Path> scan(FileScanRequest scanRequest) {
+    public List<String> scan(FileScanRequest scanRequest) {
         // Get threads count if provided else use number from properties
         int threadsCount = scanRequest.threadsCount() != null ?
                 scanRequest.threadsCount() : properties.getThreadsCount();

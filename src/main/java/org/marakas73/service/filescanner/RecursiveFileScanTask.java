@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.concurrent.RecursiveTask;
 import java.util.stream.Stream;
 
-public class RecursiveFileScanTask extends RecursiveTask<List<Path>> {
+public class RecursiveFileScanTask extends RecursiveTask<List<String>> {
     private final FileScanFilterMatcher fileScanFilterMatcher;
 
     private final Path targetPath;
@@ -27,15 +27,15 @@ public class RecursiveFileScanTask extends RecursiveTask<List<Path>> {
     }
 
     @Override
-    protected List<Path> compute() {
+    protected List<String> compute() {
         try(Stream<Path> directoryMembers = Files.list(targetPath)) {
             List<RecursiveFileScanTask> subTasks = new ArrayList<>();
-            List<Path> scannedFilePaths = new ArrayList<>();
+            List<String> scannedFilePaths = new ArrayList<>();
 
             for(var member : directoryMembers.toList()) {
                 if (Files.isRegularFile(member)) {
                     if (fileScanFilterMatcher.matches(member.toAbsolutePath(), scanFilter)) {
-                        scannedFilePaths.add(member.toAbsolutePath());
+                        scannedFilePaths.add(member.toAbsolutePath().toString());
                     }
                 } else if (Files.isDirectory(member)) {
                     var subTask = new RecursiveFileScanTask(
