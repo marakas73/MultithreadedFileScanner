@@ -3,6 +3,8 @@ package org.marakas73.service.filescanner;
 import org.marakas73.config.FileScannerProperties;
 import org.marakas73.model.FileScanRequest;
 import org.marakas73.service.filtermatcher.FileScanFilterMatcher;
+import org.springframework.cache.annotation.CacheConfig;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.nio.file.Paths;
@@ -10,6 +12,7 @@ import java.util.List;
 import java.util.concurrent.ForkJoinPool;
 
 @Service
+@CacheConfig(cacheNames = "fileScanCache")
 public class FileScanner {
     private final FileScanFilterMatcher patternMatcher;
     private final FileScannerProperties properties;
@@ -21,6 +24,7 @@ public class FileScanner {
         this.properties = properties;
     }
 
+    @Cacheable(key = "#scanRequest.directoryPath + ':' + #scanRequest.scanFilter")
     public List<String> scan(FileScanRequest scanRequest) {
         // Get threads count if provided else use number from properties
         int threadsCount = scanRequest.threadsCount() != null ?
@@ -36,6 +40,9 @@ public class FileScanner {
             return pool.invoke(fileScanTask);
         } catch (IllegalArgumentException iae) {
             throw new IllegalArgumentException("Threads count number way too big: " + threadsCount);
+        } finally {
+            // TODO: Need to close pool after use, but another better way
+            this.kill();
         }
     }
 
