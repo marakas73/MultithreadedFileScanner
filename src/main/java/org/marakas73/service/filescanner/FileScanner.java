@@ -24,7 +24,10 @@ public class FileScanner {
         this.properties = properties;
     }
 
-    @Cacheable(key = "#scanRequest.directoryPath + ':' + #scanRequest.scanFilter")
+    @Cacheable(
+            key = "#scanRequest.directoryPath + ':' + #scanRequest.scanFilter",
+            unless = "@cacheSizeEvaluator.isTooBig(#result)"
+    )
     public List<String> scan(FileScanRequest scanRequest) {
         // Get threads count if provided else use number from properties
         int threadsCount = scanRequest.threadsCount() != null ?
