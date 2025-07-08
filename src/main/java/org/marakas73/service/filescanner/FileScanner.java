@@ -1,15 +1,12 @@
 package org.marakas73.service.filescanner;
 
 import jakarta.annotation.PreDestroy;
-import org.marakas73.common.cache.CacheSizeEvaluator;
 import org.marakas73.config.FileScannerProperties;
 import org.marakas73.model.FileScanContext;
 import org.marakas73.model.FileScanRequest;
 import org.marakas73.model.FileScanResult;
+import org.marakas73.service.filescanner.util.FileScanCacheUtils;
 import org.marakas73.service.filtermatcher.FileScanFilterMatcher;
-import org.springframework.cache.Cache;
-import org.springframework.cache.CacheManager;
-import org.springframework.cache.annotation.CacheConfig;
 import org.springframework.stereotype.Service;
 
 import java.nio.file.Paths;
@@ -20,54 +17,40 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 @Service
-@CacheConfig(cacheNames = "fileScanCache")
 public class FileScanner {
     private static final int NORMAL_SHUTDOWN_TIME_LIMIT_SECS = 5; // 5 secs
+    private static final String FINAL_RESULTS_CACHE_NAME = "fileScanCache";
+    private static final String TOKEN_CACHE_NAME = "fileScanTokenCache";
 
     private final FileScanFilterMatcher patternMatcher;
     private final FileScannerProperties properties;
-    private final CacheManager cacheManager;
-    private final CacheSizeEvaluator cacheSizeEvaluator;
+    private final FileScanCacheUtils cacheUtils;
 
     private final ConcurrentMap<String, FileScanContext> scans = new ConcurrentHashMap<>();
 
     public FileScanner(
             FileScanFilterMatcher patternMatcher,
             FileScannerProperties properties,
-            CacheManager cacheManager,
-            CacheSizeEvaluator cacheSizeEvaluator
+            FileScanCacheUtils cacheUtils
     ) {
         this.patternMatcher = patternMatcher;
         this.properties = properties;
-        this.cacheManager = cacheManager;
-        this.cacheSizeEvaluator = cacheSizeEvaluator;
+        this.cacheUtils = cacheUtils;
     }
 
     public FileScanResult startScan(FileScanRequest scanRequest) {
-        // Build cache key
-        String cacheKey = scanRequest.directoryPath()
-                + ":" + scanRequest.depthLimit()
-                + ":" + scanRequest.scanFilter();
+        String cacheKey = cacheUtils.buildScanCacheKey(scanRequest);
+        String token = UUID.randomUUID().toString();
 
         // Check if result is already cached
-        Cache cache = cacheManager.getCache("fileScanCache");
-        if (cache != null) {
-            // Use wrapper to avoid generics problem
-            Cache.ValueWrapper wrapper = cache.get(cacheKey);
-            if (wrapper != null) {
-                @SuppressWarnings("unchecked")
-                List<String> cached = (List<String>) wrapper.get();
-                if (cached != null) {
-                    // Cache exits, return its value
-                    // TODO: Cache log here
-                    return new FileScanResult(null,true, cached);
-                }
-            }
+        Optional<FileScanResult> resultOptional = cacheUtils.getCachedResult(cacheKey);
+        if(resultOptional.isPresent()) {
+            // Return cached result
+            return resultOptional.orElseThrow(() -> new IllegalStateException("Result is expected but not found"));
         }
 
         // No cache found by key
         // Starting scanner task
-        String id = UUID.randomUUID().toString();
         int threads = Optional.ofNullable(scanRequest.threadsCount())
                 .orElse(properties.getThreadsCount());
 
@@ -90,21 +73,44 @@ public class FileScanner {
             List<String> result = task.invoke();
             // Caching only full results
             if(!task.isInterrupted()) {
-                // Use another instance of cache to avoid dependence on external
-                Cache inTaskCache = cacheManager.getCache("fileScanCache");
-                if (inTaskCache != null && !cacheSizeEvaluator.isTooBig(result)) {
-                    String key = scanRequest.directoryPath() + ":" + scanRequest.depthLimit() + ":" + scanRequest.scanFilter();
-                    inTaskCache.put(key, result);
-                    // TODO: Cache log here
+                // Try to put result in cache
+                boolean cached = cacheUtils.putValueInCache(cacheKey, result, FINAL_RESULTS_CACHE_NAME);
+                if(cached) {
+                    // Remove result from buffer if it successfully cached
+                    scans.remove(token);
                 }
             }
             return result;
         });
-        scans.put(id, new FileScanContext(pool, future, partial, interrupted, cacheKey));
-        return new FileScanResult(id, false, List.of());
+        scans.put(token, new FileScanContext(pool, future, partial, interrupted, cacheKey));
+        return new FileScanResult(token, false, List.of());
     }
 
     public FileScanResult getResult(String token) {
+        // Get cache key from token caches
+        Optional<Object> cacheKeyOptional = cacheUtils.getCachedResult(token, TOKEN_CACHE_NAME);
+        if(cacheKeyOptional.isPresent()) {
+            String cacheKey = (String) cacheKeyOptional.orElseThrow(
+                    () -> new IllegalStateException("Cache key is expected but not found")
+            );
+
+            // Check if result is already cached
+            Optional<Object> resultOptional = cacheUtils.getCachedResult(cacheKey, FINAL_RESULTS_CACHE_NAME);
+            if(resultOptional.isPresent()) {
+                // Get result
+                List<String> result = (List<String>) resultOptional.orElseThrow(() -> new IllegalStateException("Result is expected but not found"));
+                // Return cached file scan result
+                FileScanResult fileScanResult = new FileScanResult(
+                        null,
+                        true,
+
+                );
+                return
+            }
+        }
+
+        // No cached result
+        // Search for partial or full result in buffered scans
         FileScanContext context = scans.get(token);
         if (context != null) {
             ForkJoinTask<List<String>> future = context.future();
@@ -114,7 +120,7 @@ public class FileScanner {
                 try {
                     full = future.get();
                 } catch (Exception e) {
-                    throw new RuntimeException("Error getting result", e);
+                    throw new RuntimeException("Error while getting result", e);
                 } finally {
                     cleanup(token);
                 }
@@ -127,8 +133,7 @@ public class FileScanner {
             }
         }
 
-        // If context not found
-        // (it can be case when scan result is cached and startScan() returned result with null token)
+        // If no scan result found in cache or scans by token
         return null;
     }
 
