@@ -8,65 +8,88 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.RecursiveTask;
-import java.util.stream.Stream;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class RecursiveFileScanTask extends RecursiveTask<List<String>> {
     private final FileScanFilterMatcher fileScanFilterMatcher;
-
     private final Path targetPath;
     private final FileScanFilter scanFilter;
     private final int depthLimit;
     private final int currentDepth;
+
+    private final CopyOnWriteArrayList<String> partial;
+    private final AtomicBoolean interrupted;
 
     public RecursiveFileScanTask(
             FileScanFilterMatcher fileScanFilterMatcher,
             Path targetPath,
             FileScanFilter scanFilter,
             Integer depthLimit,
-            int currentDepth
+            int currentDepth,
+            CopyOnWriteArrayList<String> partial,
+            AtomicBoolean interrupted
     ) {
         this.fileScanFilterMatcher = fileScanFilterMatcher;
         this.targetPath = targetPath;
         this.scanFilter = scanFilter;
-        this.depthLimit = depthLimit != null ? depthLimit : -1;
+        this.depthLimit = depthLimit != null ? depthLimit : -1; // -1 is default value for unlimited depth
         this.currentDepth = currentDepth;
+        this.partial = partial;
+        this.interrupted = interrupted;
     }
 
     @Override
     protected List<String> compute() {
-        // depthLimit == -1 means that no depth limit provided (recursing depth is unlimited)
-        if(depthLimit != -1 && currentDepth > depthLimit) {
-            // Exit current scan iteration with empty list because of depth limit exceeded
+        // Check interrupted flag
+        if (interrupted.get() || Thread.currentThread().isInterrupted()) {
             return Collections.emptyList();
         }
 
-        try(Stream<Path> directoryMembers = Files.list(targetPath)) {
-            List<RecursiveFileScanTask> subTasks = new ArrayList<>();
-            List<String> scannedFilePaths = new ArrayList<>();
+        List<RecursiveFileScanTask> subTasks = new ArrayList<>();
+        List<String> localResults = new ArrayList<>();
 
-            for(var member : directoryMembers.toList()) {
+        // Safe directory scanning
+        try (var stream = Files.list(targetPath)) {
+            for (Path member : stream.toList()) {
+                // Each iteration check interrupted flag
+                if (interrupted.get() || Thread.currentThread().isInterrupted()) {
+                    break;
+                }
+
                 if (Files.isRegularFile(member)) {
                     if (fileScanFilterMatcher.matches(member.toAbsolutePath(), scanFilter)) {
-                        scannedFilePaths.add(member.toAbsolutePath().toString());
+                        String pathStr = member.toAbsolutePath().toString();
+                        localResults.add(pathStr);
+                        partial.add(pathStr);
                     }
                 } else if (Files.isDirectory(member)) {
-                    var subTask = new RecursiveFileScanTask(
+                    // depthLimit == -1 means that no depth limit provided
+                    if(depthLimit != -1 && currentDepth > depthLimit) {
+                        continue;
+                    }
+
+                    RecursiveFileScanTask subTask = new RecursiveFileScanTask(
                             fileScanFilterMatcher,
                             member.toAbsolutePath(),
                             scanFilter,
                             depthLimit,
-                            currentDepth + 1
+                            currentDepth + 1,
+                            partial,
+                            interrupted
                     );
                     subTasks.add(subTask);
                     subTask.fork();
                 }
             }
 
-            subTasks.forEach(subTask -> scannedFilePaths.addAll(subTask.join()));
-            return scannedFilePaths;
+            // Collect subtask results
+            subTasks.forEach(subTask -> localResults.addAll(subTask.join()));
         } catch (Exception e) {
-            return Collections.emptyList();
+            // Ignore any errors while directory scanning
         }
+
+        return localResults;
     }
 }
