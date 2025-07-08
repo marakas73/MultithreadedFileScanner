@@ -19,6 +19,7 @@ public class FileScanRequestMapper {
         return new FileScanRequest(
                 dto.directoryPath(),
                 dto.threadsCount(),
+                dto.depthLimit(),
                 scanFilterModel
         );
     }

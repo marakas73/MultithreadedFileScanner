@@ -12,6 +12,9 @@ public record FileScanRequestDto(
         @Positive(message = "Threads count must be positive")
         Integer threadsCount,
 
+        @Positive(message = "Depth limit must be positive")
+        Integer depthLimit,
+
         FileScanFilterDto scanFilter
 ) {
 }
