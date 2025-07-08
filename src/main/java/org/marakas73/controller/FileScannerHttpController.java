@@ -4,9 +4,9 @@ import jakarta.validation.Valid;
 import org.marakas73.controller.dto.response.ResponseWrapper;
 import org.marakas73.controller.mapper.FileScanRequestMapper;
 import org.marakas73.controller.dto.request.FileScanRequestDto;
-import org.marakas73.controller.dto.response.FileScanResponseDto;
 import org.marakas73.controller.dto.response.ResponseStatus;
 import org.marakas73.model.FileScanRequest;
+import org.marakas73.model.FileScanResult;
 import org.marakas73.service.filescanner.FileScanner;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
 @RestController
-@RequestMapping("api/file-scanner")
+@RequestMapping("api/file-scanner/scan")
 public class FileScannerHttpController {
     private final FileScanner fileScanner;
     private final FileScanRequestMapper fileScanRequestMapper;
@@ -24,13 +24,13 @@ public class FileScannerHttpController {
         this.fileScanRequestMapper = fileScanRequestMapper;
     }
 
-    @PostMapping("scan")
-    public ResponseEntity<ResponseWrapper<FileScanResponseDto>> scan(
+    @PostMapping
+    public ResponseEntity<ResponseWrapper<FileScanResult>> startScan(
             @Valid @RequestBody FileScanRequestDto requestDto
     ) {
         try{
             FileScanRequest scanRequest = fileScanRequestMapper.toModel(requestDto);
-            FileScanResponseDto scanResponse = new FileScanResponseDto(fileScanner.scan(scanRequest));
+            FileScanResult scanResponse = fileScanner.startScan(scanRequest);
 
             return ResponseEntity.ok().body(new ResponseWrapper<>(ResponseStatus.SUCCESS, Map.of(), scanResponse));
         } catch (RuntimeException e) {
@@ -42,14 +42,10 @@ public class FileScannerHttpController {
         }
     }
 
-    @GetMapping("kill")
-    public ResponseEntity<String> kill() {
-        try {
-            fileScanner.kill();
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(ResponseStatus.ERROR.name());
-        }
-
-        return ResponseEntity.ok().body(ResponseStatus.SUCCESS.name());
+    @DeleteMapping("/{token}")
+    public ResponseEntity<Void> killScan(@PathVariable String token) {
+        boolean stopped = fileScanner.kill(token);
+        return stopped ? ResponseEntity.noContent().build()
+                : ResponseEntity.notFound().build();
     }
 }
