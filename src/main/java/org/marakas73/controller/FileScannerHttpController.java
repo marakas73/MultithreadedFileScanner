@@ -8,6 +8,7 @@ import org.marakas73.controller.dto.response.ResponseStatus;
 import org.marakas73.model.FileScanRequest;
 import org.marakas73.model.FileScanResult;
 import org.marakas73.service.filescanner.FileScanner;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -33,6 +34,30 @@ public class FileScannerHttpController {
             FileScanResult scanResponse = fileScanner.startScan(scanRequest);
 
             return ResponseEntity.ok().body(new ResponseWrapper<>(ResponseStatus.SUCCESS, Map.of(), scanResponse));
+        } catch (RuntimeException e) {
+            Map<String, String> error = Map.of(
+                    e.getClass().getSimpleName(),
+                    e.getMessage() == null ? "" : e.getMessage()
+            );
+            return ResponseEntity.badRequest().body(new ResponseWrapper<>(ResponseStatus.ERROR, error, null));
+        }
+    }
+
+    @GetMapping("/{token}")
+    public ResponseEntity<ResponseWrapper<FileScanResult>> getResult(@PathVariable String token) {
+        try{
+            FileScanResult result = fileScanner.getResult(token);
+
+            if (result == null) {
+                return ResponseEntity.notFound().build();
+            }
+
+            if (result.completed()) {
+                return ResponseEntity.ok(new ResponseWrapper<>(ResponseStatus.SUCCESS, Map.of(), result));
+            } else {
+                return ResponseEntity.status(HttpStatus.ACCEPTED)
+                        .body(new ResponseWrapper<>(ResponseStatus.SUCCESS, Map.of(), result));
+            }
         } catch (RuntimeException e) {
             Map<String, String> error = Map.of(
                     e.getClass().getSimpleName(),
