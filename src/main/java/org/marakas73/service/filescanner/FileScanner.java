@@ -1,5 +1,6 @@
 package org.marakas73.service.filescanner;
 
+import jakarta.annotation.PreDestroy;
 import org.marakas73.common.cache.CacheSizeEvaluator;
 import org.marakas73.config.FileScannerProperties;
 import org.marakas73.model.FileScanContext;
@@ -163,5 +164,17 @@ public class FileScanner {
                 }
             }
         }
+    }
+
+    @PreDestroy
+    public void destroyAll() {
+        // Correct shutdown when application closes
+        scans.forEach((_, context) -> {
+            context.future().cancel(true);
+            try(ForkJoinPool pool = context.pool()) {
+                pool.shutdownNow();
+            }
+        });
+        scans.clear();
     }
 }
