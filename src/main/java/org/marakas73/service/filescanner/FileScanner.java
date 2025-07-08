@@ -25,7 +25,7 @@ public class FileScanner {
     }
 
     @Cacheable(
-            key = "#scanRequest.directoryPath + ':' + #scanRequest.scanFilter",
+            key = "#scanRequest.directoryPath + ':' + #scanRequest.depthLimit + ':' + #scanRequest.scanFilter",
             unless = "@cacheSizeEvaluator.isTooBig(#result)"
     )
     public List<String> scan(FileScanRequest scanRequest) {
@@ -38,7 +38,9 @@ public class FileScanner {
             var fileScanTask = new RecursiveFileScanTask(
                     patternMatcher,
                     Paths.get(scanRequest.directoryPath()),
-                    scanRequest.scanFilter()
+                    scanRequest.scanFilter(),
+                    scanRequest.depthLimit(),
+                    0
             );
             return pool.invoke(fileScanTask);
         } catch (IllegalArgumentException iae) {
