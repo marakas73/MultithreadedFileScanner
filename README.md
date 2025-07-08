@@ -29,7 +29,7 @@ A simple Spring Boot REST application that scans directories in parallel, filte
 
 1. Clone the repository  
    ```bash
-   git clone https://github.com/your‑username/file‑scanner‑service.git
+   git clone https://github.com/marakas73/MultithreadedFileScanner.git
    cd file‑scanner‑service
 
 2. Configure Redis in src/main/resources/application.properties
@@ -40,14 +40,14 @@ A simple Spring Boot REST application that scans directories in parallel, filte
 3. Build and start the app
    ```bash
    mvn clean package
-   java -jar target/file-scanner-service.jar
+   java -jar target/MultithreadedFileScanner.jar
 
 ### Usage
 #### Start scan:
-`POST /api/scan with JSON body of filters`
+`POST /api/file-scanner/scan with JSON body of filters`
 
 #### Get results:
-`GET /api/scan/{token}`
+`GET /api/file-scanner/scan/{token}`
 
 #### Cancel scan:
-`DELETE /api/scan/{token}`
+`DELETE /api/file-scanner/scan/{token}`
