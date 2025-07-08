@@ -40,6 +40,10 @@ public class RecursiveFileScanTask extends RecursiveTask<List<String>> {
         this.interrupted = interrupted;
     }
 
+    public boolean isInterrupted() {
+        return interrupted.get();
+    }
+
     @Override
     protected List<String> compute() {
         // Check interrupted flag

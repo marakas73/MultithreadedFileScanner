@@ -88,12 +88,15 @@ public class FileScanner {
         // Create task with caching in the end of it
         ForkJoinTask<List<String>> future = pool.submit(() -> {
             List<String> result = task.invoke();
-            // Use another instance of cache to avoid dependence on external
-            Cache inTaskCache = cacheManager.getCache("fileScanCache");
-            if(inTaskCache != null && !cacheSizeEvaluator.isTooBig(result)) {
-                String key = scanRequest.directoryPath() + ":" + scanRequest.depthLimit() + ":" + scanRequest.scanFilter();
-                inTaskCache.put(key, result);
-                // TODO: Cache log here
+            // Caching only full results
+            if(!task.isInterrupted()) {
+                // Use another instance of cache to avoid dependence on external
+                Cache inTaskCache = cacheManager.getCache("fileScanCache");
+                if (inTaskCache != null && !cacheSizeEvaluator.isTooBig(result)) {
+                    String key = scanRequest.directoryPath() + ":" + scanRequest.depthLimit() + ":" + scanRequest.scanFilter();
+                    inTaskCache.put(key, result);
+                    // TODO: Cache log here
+                }
             }
             return result;
         });
