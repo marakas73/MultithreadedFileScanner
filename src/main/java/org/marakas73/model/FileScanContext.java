@@ -1,5 +1,6 @@
 package org.marakas73.model;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ForkJoinPool;
@@ -12,6 +13,8 @@ public final class FileScanContext {
     private final List<String> partial;
     private final AtomicBoolean interrupted;
     private final String cacheKey;
+
+    private long completedAtMillis;
 
     public FileScanContext(
             ForkJoinPool pool,
@@ -45,6 +48,21 @@ public final class FileScanContext {
 
     public String getCacheKey() {
         return cacheKey;
+    }
+
+    public long getCompletedAtMillis() {
+        return completedAtMillis;
+    }
+
+    public void setCompletedAtMillis(long completedAtMillis) {
+        if(this.completedAtMillis != 0) { // Value can be set only once to avoid relevant problems
+            throw new IllegalStateException("CompletedAtMillis already set");
+        }
+        this.completedAtMillis = completedAtMillis;
+    }
+
+    public void completedNow() {
+        setCompletedAtMillis(System.currentTimeMillis());
     }
 
     @Override

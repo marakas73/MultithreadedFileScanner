@@ -8,9 +8,13 @@ import org.marakas73.model.FileScanResult;
 import org.marakas73.service.filescanner.exception.ActiveScanCountLimitExceededException;
 import org.marakas73.service.filescanner.util.FileScanCacheUtils;
 import org.marakas73.service.filtermatcher.FileScanFilterMatcher;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -19,6 +23,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 @Service
 public class FileScanner {
+    private static final Logger log = LoggerFactory.getLogger(FileScanner.class);
+
     private static final int NORMAL_SHUTDOWN_TIME_LIMIT_SECS = 5; // 5 secs
     private static final String FULL_RESULT_CACHE_NAME = "fileScanFullResult";
     private static final String INTERRUPTED_RESULT_CACHE_NAME = "fileScanInterruptedResult";
@@ -41,6 +47,10 @@ public class FileScanner {
     }
 
     public FileScanResult startScan(FileScanRequest scanRequest) {
+        // TODO: Remove
+        log.info("TEST");
+
+
         String cacheKey = cacheUtils.buildScanCacheKey(scanRequest);
 
         // Check if result is already cached
@@ -97,6 +107,12 @@ public class FileScanner {
             if(cached) {
                 // Remove result from buffer if it successfully cached
                 cleanup(token);
+            } else {
+                // TODO: Need to set completedAt when task is done (interrupted or completed)
+                while(scans.get(token) == null) {
+                    // Avoid NPE
+                }
+                scans.get(token).completedNow();
             }
 
             return result;
@@ -218,6 +234,31 @@ public class FileScanner {
         return scans.values().stream()
                 .filter(context -> !context.getFuture().isDone()) // Is running
                 .count();
+    }
+
+    // Scheduled cleanup for removing uncached completed scans from concurrent map
+    // Schedule rate based on redis cache ttl, but 4 times smaller for efficiency compromise
+    @Scheduled(fixedRateString = "${scanner.buffered-result-ttl}/4", timeUnit = TimeUnit.SECONDS)
+    private void scansScheduledCleanup() {
+        log.info("Buffered scans cleanup started.");
+        List<String> tokensToClear = new ArrayList<>();
+        scans.forEach((key, scanContext) -> {
+            if (scanContext.getFuture().isDone()
+                    && scanContext.getCompletedAtMillis() != 0
+                    && (scanContext.getCompletedAtMillis() + properties.getBufferedResultTtl())
+                    > System.currentTimeMillis()
+            ) {
+                // Result is expired by ttl, add to clearing list
+                tokensToClear.add(key);
+            }
+        });
+
+        // Clear expired results
+        tokensToClear.forEach(this::cleanup);
+        log.info(
+                "Buffered scan cleanup completed. {} of {} ({} active) removed.",
+                tokensToClear.size(), scans.size(), getActiveScanCount()
+        );
     }
 
     @PreDestroy
