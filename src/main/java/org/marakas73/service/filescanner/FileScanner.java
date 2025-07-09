@@ -5,6 +5,7 @@ import org.marakas73.config.FileScannerProperties;
 import org.marakas73.model.FileScanContext;
 import org.marakas73.model.FileScanRequest;
 import org.marakas73.model.FileScanResult;
+import org.marakas73.service.filescanner.exception.ActiveScanCountLimitExceededException;
 import org.marakas73.service.filescanner.util.FileScanCacheUtils;
 import org.marakas73.service.filtermatcher.FileScanFilterMatcher;
 import org.springframework.stereotype.Service;
@@ -53,6 +54,13 @@ public class FileScanner {
         }
 
         // No cache found by key
+        // Check if active scans count already at maximum number
+        if(getActiveScanCount() >= properties.getMaxActiveScans()) {
+            throw new ActiveScanCountLimitExceededException(
+                    "Cannot add new task, limit exceeded: " + properties.getMaxActiveScans()
+            );
+        }
+
         // Starting scanner task
         String token = UUID.randomUUID().toString();
         int threads = Optional.ofNullable(scanRequest.threadsCount())
@@ -204,6 +212,12 @@ public class FileScanner {
                 }
             }
         }
+    }
+
+    private long getActiveScanCount() {
+        return scans.values().stream()
+                .filter(context -> !context.future().isDone()) // Is running
+                .count();
     }
 
     @PreDestroy
