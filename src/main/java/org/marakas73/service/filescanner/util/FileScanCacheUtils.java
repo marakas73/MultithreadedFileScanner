@@ -29,12 +29,17 @@ public class FileScanCacheUtils {
      * @return {@code true} if value cached successfully
      */
     public boolean putValueInCache(String key, Object value, String cacheName) {
-        Cache cache = cacheManager.getCache(cacheName);
-        if (cache != null && !cacheSizeEvaluator.isTooBig(value)) {
-            // Cache
-            cache.put(key, value);
-            // TODO: Cache log here
-            return true;
+        try {
+            Cache cache = cacheManager.getCache(cacheName);
+            if (cache != null && !cacheSizeEvaluator.isTooBig(value)) {
+                // Cache
+                cache.put(key, value);
+                // TODO: Cache log here
+                return true;
+            }
+        } catch (Exception e) {
+            // TODO: Cache error log here
+            return false;
         }
 
         return false;
