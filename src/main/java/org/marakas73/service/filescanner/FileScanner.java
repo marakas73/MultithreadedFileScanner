@@ -152,7 +152,7 @@ public class FileScanner {
         // Search for partial or full/interrupted result (which somehow can't be cached) in buffered scans
         FileScanContext context = scans.get(token);
         if (context != null) {
-            ForkJoinTask<List<String>> future = context.future();
+            ForkJoinTask<List<String>> future = context.getFuture();
 
             if (future.isDone()) {
                 List<String> completedResult;
@@ -169,7 +169,7 @@ public class FileScanner {
                 return new FileScanResult(token, true, completedResult);
             } else {
                 // Return partial result if scan is not done
-                return new FileScanResult(token, false, context.partial());
+                return new FileScanResult(token, false, context.getPartial());
             }
         }
 
@@ -186,9 +186,9 @@ public class FileScanner {
             return false;
         }
 
-        context.interrupted().set(true);
-        context.future().cancel(true);
-        try(ForkJoinPool pool = context.pool()) {
+        context.isInterrupted().set(true);
+        context.getFuture().cancel(true);
+        try(ForkJoinPool pool = context.getPool()) {
             pool.shutdownNow();
         }
 
@@ -199,7 +199,7 @@ public class FileScanner {
         FileScanContext context = scans.remove(token);
         if (context != null) {
             // Normal shutdown
-            try(ForkJoinPool pool = context.pool()) {
+            try(ForkJoinPool pool = context.getPool()) {
                 pool.shutdown();
                 try {
                     if (!pool.awaitTermination(NORMAL_SHUTDOWN_TIME_LIMIT_SECS, TimeUnit.SECONDS)) {
@@ -216,7 +216,7 @@ public class FileScanner {
 
     private long getActiveScanCount() {
         return scans.values().stream()
-                .filter(context -> !context.future().isDone()) // Is running
+                .filter(context -> !context.getFuture().isDone()) // Is running
                 .count();
     }
 
@@ -224,8 +224,8 @@ public class FileScanner {
     public void destroyAll() {
         // Correct shutdown when application closes
         scans.forEach((_, context) -> {
-            context.future().cancel(true);
-            try(ForkJoinPool pool = context.pool()) {
+            context.getFuture().cancel(true);
+            try(ForkJoinPool pool = context.getPool()) {
                 pool.shutdownNow();
             }
         });
