@@ -19,8 +19,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @Service
 public class FileScanner {
     private static final int NORMAL_SHUTDOWN_TIME_LIMIT_SECS = 5; // 5 secs
-    private static final String FINAL_RESULTS_CACHE_NAME = "fileScanCache";
-    private static final String TOKEN_CACHE_NAME = "fileScanTokenCache";
+    private static final String FULL_RESULT_CACHE_NAME = "fileScanFullResult";
+    private static final String INTERRUPTED_RESULT_CACHE_NAME = "fileScanInterruptedResult";
+    private static final String TOKEN_TO_KEY_CACHE_NAME = "fileScanTokenToKey";
 
     private final FileScanFilterMatcher patternMatcher;
     private final FileScannerProperties properties;
@@ -40,17 +41,20 @@ public class FileScanner {
 
     public FileScanResult startScan(FileScanRequest scanRequest) {
         String cacheKey = cacheUtils.buildScanCacheKey(scanRequest);
-        String token = UUID.randomUUID().toString();
 
         // Check if result is already cached
-        Optional<FileScanResult> resultOptional = cacheUtils.getCachedResult(cacheKey);
+        Optional<List<String>> resultOptional = cacheUtils.getCachedResult(cacheKey, FULL_RESULT_CACHE_NAME);
         if(resultOptional.isPresent()) {
-            // Return cached result
-            return resultOptional.orElseThrow(() -> new IllegalStateException("Result is expected but not found"));
+            List<String> cachedResult = resultOptional.orElseThrow(
+                    () -> new IllegalStateException("Result is expected but not found")
+            );
+            // Return file scan result with cached result
+            return new FileScanResult(null, true, cachedResult);
         }
 
         // No cache found by key
         // Starting scanner task
+        String token = UUID.randomUUID().toString();
         int threads = Optional.ofNullable(scanRequest.threadsCount())
                 .orElse(properties.getThreadsCount());
 
@@ -68,18 +72,25 @@ public class FileScanner {
                 interrupted
         );
 
+        // Cache token->key for future result retrieving by token
+        cacheUtils.putValueInCache(token, cacheKey, TOKEN_TO_KEY_CACHE_NAME);
+
         // Create task with caching in the end of it
         ForkJoinTask<List<String>> future = pool.submit(() -> {
             List<String> result = task.invoke();
-            // Caching only full results
-            if(!task.isInterrupted()) {
-                // Try to put result in cache
-                boolean cached = cacheUtils.putValueInCache(cacheKey, result, FINAL_RESULTS_CACHE_NAME);
-                if(cached) {
-                    // Remove result from buffer if it successfully cached
-                    scans.remove(token);
-                }
+
+            // Try to put result in cache
+            // Put in interrupted or final caches, depend on task status
+            boolean cached = cacheUtils.putValueInCache(
+                    cacheKey,
+                    result,
+                    task.isInterrupted() ? INTERRUPTED_RESULT_CACHE_NAME : FULL_RESULT_CACHE_NAME
+            );
+            if(cached) {
+                // Remove result from buffer if it successfully cached
+                cleanup(token);
             }
+
             return result;
         });
         scans.put(token, new FileScanContext(pool, future, partial, interrupted, cacheKey));
@@ -87,46 +98,67 @@ public class FileScanner {
     }
 
     public FileScanResult getResult(String token) {
+        // Check if result is already cached
         // Get cache key from token caches
-        Optional<Object> cacheKeyOptional = cacheUtils.getCachedResult(token, TOKEN_CACHE_NAME);
+        Optional<String> cacheKeyOptional = cacheUtils.getCachedKeyByToken(token, TOKEN_TO_KEY_CACHE_NAME);
         if(cacheKeyOptional.isPresent()) {
-            String cacheKey = (String) cacheKeyOptional.orElseThrow(
+            String cacheKey = cacheKeyOptional.orElseThrow(
                     () -> new IllegalStateException("Cache key is expected but not found")
             );
 
-            // Check if result is already cached
-            Optional<Object> resultOptional = cacheUtils.getCachedResult(cacheKey, FINAL_RESULTS_CACHE_NAME);
-            if(resultOptional.isPresent()) {
-                // Get result
-                List<String> result = (List<String>) resultOptional.orElseThrow(() -> new IllegalStateException("Result is expected but not found"));
-                // Return cached file scan result
-                FileScanResult fileScanResult = new FileScanResult(
+            // Try to get cached full result
+            Optional<List<String>> fullResultOptional = cacheUtils.getCachedResult(
+                    cacheKey, FULL_RESULT_CACHE_NAME
+            );
+            if(fullResultOptional.isPresent()) {
+                List<String> cachedFullResult = fullResultOptional.orElseThrow(
+                        () -> new IllegalStateException("Full result is expected but not found")
+                );
+                // Return cached file scan result with full result
+                return new FileScanResult(
                         null,
                         true,
-
+                        cachedFullResult
                 );
-                return
+            }
+
+            // No cached full result
+            // Try to get interrupted cache result
+            Optional<List<String>> interruptedCacheResult = cacheUtils.getCachedResult(
+                    cacheKey, INTERRUPTED_RESULT_CACHE_NAME
+            );
+            if(interruptedCacheResult.isPresent()) {
+                List<String> cachedInterruptedResult = interruptedCacheResult.orElseThrow(
+                        () -> new IllegalStateException("Interrupted result is expected but not found")
+                );
+                // Return cached file scan result with interrupted result
+                return new FileScanResult(
+                        null,
+                        true,
+                        cachedInterruptedResult
+                );
             }
         }
 
-        // No cached result
-        // Search for partial or full result in buffered scans
+        // No cached result at all
+        // Search for partial or full/interrupted result (which somehow can't be cached) in buffered scans
         FileScanContext context = scans.get(token);
         if (context != null) {
             ForkJoinTask<List<String>> future = context.future();
 
             if (future.isDone()) {
-                List<String> full;
+                List<String> completedResult;
                 try {
-                    full = future.get();
+                    completedResult = future.get();
                 } catch (Exception e) {
                     throw new RuntimeException("Error while getting result", e);
                 } finally {
+                    // Don't store uncached results in buffered scans after showing it
                     cleanup(token);
                 }
 
-                // Return full result
-                return new FileScanResult(token, true, full);
+                // Return completed result (can be full or interrupted)
+                return new FileScanResult(token, true, completedResult);
             } else {
                 // Return partial result if scan is not done
                 return new FileScanResult(token, false, context.partial());
@@ -141,7 +173,7 @@ public class FileScanner {
      * @return {@code true} if scan found by token and successfully stopped.
      */
     public boolean kill(String token) {
-        FileScanContext context = scans.remove(token);
+        FileScanContext context = scans.get(token);
         if (context == null) {
             return false;
         }

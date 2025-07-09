@@ -68,8 +68,7 @@ public class FileScanCacheUtils {
             // Use wrapper to avoid generics problem
             Cache.ValueWrapper wrapper = cache.get(key);
             if (wrapper != null) {
-                @SuppressWarnings("unchecked")
-                List<String> cached = (List<String>) wrapper.get();
+                String cached = (String) wrapper.get();
                 if (cached != null) {
                     // Cache exits, return its value
                     // TODO: Cache log here
