@@ -47,10 +47,6 @@ public class FileScanner {
     }
 
     public FileScanResult startScan(FileScanRequest scanRequest) {
-        // TODO: Remove
-        log.info("TEST");
-
-
         String cacheKey = cacheUtils.buildScanCacheKey(scanRequest);
 
         // Check if result is already cached
@@ -108,11 +104,13 @@ public class FileScanner {
                 // Remove result from buffer if it successfully cached
                 cleanup(token);
             } else {
-                // TODO: Need to set completedAt when task is done (interrupted or completed)
-                while(scans.get(token) == null) {
-                    // Avoid NPE
+                // Set completedAt when task is done (interrupted or completed)
+                FileScanContext scanContext = null;
+                while(scanContext == null) {
+                    scanContext = scans.get(token);
                 }
-                scans.get(token).completedNow();
+
+                scanContext.completedNow();
             }
 
             return result;
