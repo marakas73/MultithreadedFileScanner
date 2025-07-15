@@ -8,12 +8,20 @@ import org.springframework.stereotype.Component;
 public class FileScannerProperties {
     private int threadsCount;
     private long streamFileSizeLimit;
+    private long maxActiveScans;
+    private long bufferedResultTtl;
 
     public int getThreadsCount() {
         return this.threadsCount;
     }
     public long getStreamFileSizeLimit() {
         return this.streamFileSizeLimit;
+    }
+    public long getMaxActiveScans() {
+        return maxActiveScans;
+    }
+    public long getBufferedResultTtl() {
+        return bufferedResultTtl;
     }
 
     public void setThreadsCount(int threadsCount) {
@@ -36,5 +44,19 @@ public class FileScannerProperties {
         }
 
         this.streamFileSizeLimit = streamFileSizeLimit;
+    }
+    public void setMaxActiveScans(long maxActiveScans) {
+        if(maxActiveScans <= 0) {
+            throw new IllegalArgumentException("Max active scans count must be more than 0");
+        }
+
+        this.maxActiveScans = maxActiveScans;
+    }
+    public void setBufferedResultTtl(long bufferedResultTtl) {
+        if(bufferedResultTtl <= 0) {
+            throw new IllegalArgumentException("Buffered result TTL must be more than 0");
+        }
+
+        this.bufferedResultTtl = bufferedResultTtl;
     }
 }
