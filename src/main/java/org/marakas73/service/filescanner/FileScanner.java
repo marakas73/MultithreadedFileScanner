@@ -235,7 +235,7 @@ public class FileScanner {
     }
 
     // Scheduled cleanup for removing uncached completed scans from concurrent map
-    // Schedule rate based on redis cache ttl, but 4 times smaller for efficiency compromise
+    // Schedule rate based on buffered cache ttl, but 4 times smaller for efficiency compromise
     @Scheduled(fixedRateString = "${scanner.buffered-result-ttl}/4", timeUnit = TimeUnit.SECONDS)
     private void scansScheduledCleanup() {
         log.info("Buffered scans cleanup started.");
