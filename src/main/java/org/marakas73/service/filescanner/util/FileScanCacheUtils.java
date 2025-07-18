@@ -2,8 +2,11 @@ package org.marakas73.service.filescanner.util;
 
 import org.marakas73.common.cache.CacheSizeEvaluator;
 import org.marakas73.model.FileScanRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
+import org.springframework.data.redis.RedisSystemException;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -11,6 +14,8 @@ import java.util.Optional;
 
 @Component
 public class FileScanCacheUtils {
+    private final static Logger log = LoggerFactory.getLogger(FileScanCacheUtils.class);
+
     private final CacheManager cacheManager;
     private final CacheSizeEvaluator cacheSizeEvaluator;
 
@@ -32,17 +37,20 @@ public class FileScanCacheUtils {
         try {
             Cache cache = cacheManager.getCache(cacheName);
             if (cache != null && !cacheSizeEvaluator.isTooBig(value)) {
-                // Cache
                 cache.put(key, value);
-                // TODO: Cache log here
+                log.info("Cached value in Redis with key: {}", key);
                 return true;
+            } else {
+                log.warn("Cache {} not found or value too big for key {}", cacheName, key);
+                return false;
             }
+        } catch (RedisSystemException rse) {
+            log.warn("Redis error for key {}: {}", key, rse.getMessage());
+            return false;
         } catch (Exception e) {
-            // TODO: Cache error log here
+            log.warn("Unexpected error caching value for key {}: {}", key, e.getMessage());
             return false;
         }
-
-        return false;
     }
 
     public Optional<List<String>> getCachedResult(String key, String cacheName) {
@@ -56,7 +64,6 @@ public class FileScanCacheUtils {
                 List<String> cached = (List<String>) wrapper.get();
                 if (cached != null) {
                     // Cache exits, return its value
-                    // TODO: Cache log here
                     return Optional.of(cached);
                 }
             }
@@ -76,7 +83,6 @@ public class FileScanCacheUtils {
                 String cached = (String) wrapper.get();
                 if (cached != null) {
                     // Cache exits, return its value
-                    // TODO: Cache log here
                     return Optional.of(cached);
                 }
             }
