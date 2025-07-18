@@ -58,6 +58,28 @@ public class FileScanner {
         }
 
         // No cache found by key
+        // Check buffered scans for result
+        Optional<FileScanContext> bufferedScanOptional = getScanByCacheKey(cacheKey);
+        if(bufferedScanOptional.isPresent()) {
+            // Get result from scan
+            var future = bufferedScanOptional.get().getFuture();
+            if(future.isDone()) {
+                try {
+                    // Try to get and return file scan buffered result
+                    var result = future.get();
+                    log.info("Scan task with request {} is buffered, returns it's result", scanRequest);
+                    return new FileScanResult(null, true, result);
+                } catch (Exception e) {
+                    log.error("Failed to get scan result from buffered scan by key {}:", cacheKey, e);
+                    // Continue like buffered scan was not found
+                }
+            }
+        }
+
+        // No cached or buffered result was found
+        // Starting new scanner task
+        log.info("Scan task with request {} doesn't cached or buffered. Creating and run scan task", scanRequest);
+
         // Check if active scans count already at maximum number
         if(getActiveScanCount() >= properties.getMaxActiveScans()) {
             throw new ActiveScanCountLimitExceededException(
@@ -251,6 +273,12 @@ public class FileScanner {
         return scans.values().stream()
                 .filter(context -> !context.getFuture().isDone()) // Is running
                 .count();
+    }
+
+    private Optional<FileScanContext> getScanByCacheKey(String cacheKey) {
+        return scans.values().stream()
+                .filter(scanContext -> scanContext.getCacheKey().equals(cacheKey))
+                .findFirst();
     }
 
     // Scheduled cleanup for removing uncached completed scans from concurrent map
