@@ -1,15 +1,14 @@
 package org.marakas73.model;
 
-import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ForkJoinPool;
-import java.util.concurrent.ForkJoinTask;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public final class FileScanContext {
     private final ForkJoinPool pool;
-    private final ForkJoinTask<List<String>> future;
+    private final CompletableFuture<List<String>> future;
     private final List<String> partial;
     private final AtomicBoolean interrupted;
     private final String cacheKey;
@@ -18,7 +17,7 @@ public final class FileScanContext {
 
     public FileScanContext(
             ForkJoinPool pool,
-            ForkJoinTask<List<String>> future,
+            CompletableFuture<List<String>> future,
             List<String> partial,
             AtomicBoolean interrupted,
             String cacheKey
@@ -34,7 +33,7 @@ public final class FileScanContext {
         return pool;
     }
 
-    public ForkJoinTask<List<String>> getFuture() {
+    public CompletableFuture<List<String>> getFuture() {
         return future;
     }
 
