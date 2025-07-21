@@ -1,5 +1,8 @@
 package org.marakas73.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.marakas73.controller.dto.response.FileScanResponseDto;
 import org.marakas73.controller.dto.response.ResponseWrapper;
@@ -18,6 +21,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("api/file-scanner/scan")
+@Tag(name = "File scanner HTTP controller", description = "Provided file scanner operations")
 public class FileScannerHttpController {
     private final FileScanner fileScanner;
     private final FileScanRequestMapper fileScanRequestMapper;
@@ -34,8 +38,12 @@ public class FileScannerHttpController {
     }
 
     @PostMapping
+    @Operation(summary = "Create and start new file scan task")
     public ResponseEntity<ResponseWrapper<FileScanResponseDto>> startScan(
-            @Valid @RequestBody FileScanRequestDto requestDto
+            @Valid
+            @RequestBody
+            @Parameter(description = "Full request of new file scan task", required = true)
+            FileScanRequestDto requestDto
     ) {
         try{
             FileScanRequest scanRequest = fileScanRequestMapper.toModel(requestDto);
@@ -53,8 +61,16 @@ public class FileScannerHttpController {
     }
 
     @GetMapping("/{token}")
-    public ResponseEntity<ResponseWrapper<FileScanResult>> getResult(@PathVariable String token) {
-    public ResponseEntity<ResponseWrapper<FileScanResponseDto>> getResult(@PathVariable String token) {
+    @Operation(summary = "Retrieve exact moment result of file scan task")
+    public ResponseEntity<ResponseWrapper<FileScanResponseDto>> getResult(
+            @PathVariable
+            @Parameter(
+                    description = "Token of target file scan task",
+                    example = "a1b2c3d4-e5f6-4a7b-8c9d-0123456789ab",
+                    required = true
+            )
+            String token
+    ) {
         try{
             FileScanResult result = fileScanner.getResult(token);
 
@@ -79,7 +95,16 @@ public class FileScannerHttpController {
     }
 
     @DeleteMapping("/{token}")
-    public ResponseEntity<Void> killScan(@PathVariable String token) {
+    @Operation(summary = "Stop and delete file scan task")
+    public ResponseEntity<Void> killScan(
+            @PathVariable
+            @Parameter(
+                    description = "Token of target file scan task",
+                    example = "a1b2c3d4-e5f6-4a7b-8c9d-0123456789ab",
+                    required = true
+            )
+            String token
+    ) {
         boolean stopped = fileScanner.kill(token);
         return stopped ? ResponseEntity.noContent().build()
                 : ResponseEntity.notFound().build();
