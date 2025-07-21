@@ -2,14 +2,6 @@
 
 A simple Spring Boot REST application that scans directories in parallel, filters files by name, size, date or content, and caches results in Redis.
 
-## Technologies
-
-- Java 23+  
-- Spring Boot  
-- Maven  
-- Redis  
-- ForkJoinPool for concurrency  
-
 ## Features
 
 - Start a file scan with filters (name, size, date, text)  
@@ -41,13 +33,3 @@ A simple Spring Boot REST application that scans directories in parallel, filte
    ```bash
    mvn clean package
    java -jar target/MultithreadedFileScanner.jar
-
-### Usage
-#### Start scan:
-`POST /api/file-scanner/scan with JSON body of filters`
-
-#### Get results:
-`GET /api/file-scanner/scan/{token}`
-
-#### Cancel scan:
-`DELETE /api/file-scanner/scan/{token}`
