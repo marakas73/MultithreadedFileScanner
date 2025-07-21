@@ -1,6 +1,6 @@
-package org.marakas73.controller.mapper;
+package org.marakas73.controller.filescanner.mapper;
 
-import org.marakas73.controller.dto.request.FileScanRequestDto;
+import org.marakas73.controller.filescanner.dto.request.FileScanRequestDto;
 import org.marakas73.model.FileScanFilter;
 import org.marakas73.model.FileScanRequest;
 import org.springframework.stereotype.Component;

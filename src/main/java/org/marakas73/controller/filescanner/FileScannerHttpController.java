@@ -1,15 +1,15 @@
-package org.marakas73.controller;
+package org.marakas73.controller.filescanner;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import org.marakas73.controller.dto.response.FileScanResponseDto;
-import org.marakas73.controller.dto.response.ResponseWrapper;
-import org.marakas73.controller.mapper.FileScanRequestMapper;
-import org.marakas73.controller.dto.request.FileScanRequestDto;
-import org.marakas73.controller.dto.response.ResponseStatus;
-import org.marakas73.controller.mapper.FileScanResultMapper;
+import org.marakas73.controller.filescanner.dto.response.FileScanResponseDto;
+import org.marakas73.controller.filescanner.dto.response.ResponseWrapper;
+import org.marakas73.controller.filescanner.mapper.FileScanRequestMapper;
+import org.marakas73.controller.filescanner.dto.request.FileScanRequestDto;
+import org.marakas73.controller.filescanner.dto.response.ResponseStatus;
+import org.marakas73.controller.filescanner.mapper.FileScanResultMapper;
 import org.marakas73.model.FileScanRequest;
 import org.marakas73.model.FileScanResult;
 import org.marakas73.service.filescanner.FileScanner;

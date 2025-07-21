@@ -1,4 +1,4 @@
-package org.marakas73.controller.dto.response;
+package org.marakas73.controller.filescanner.dto.response;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 

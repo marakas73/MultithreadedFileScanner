@@ -1,4 +1,4 @@
-package org.marakas73.controller.dto.request;
+package org.marakas73.controller.filescanner.dto.request;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.annotation.Nullable;
