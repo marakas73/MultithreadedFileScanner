@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <title>File Scanner</title>
+    <link rel="stylesheet" th:href="@{/css/file-scanner.css}"/>
+</head>
+<body>
+<div class="scanner-container">
+    <h1>File Scanner</h1>
+
+    <form id="scanForm">
+        <div class="form-group">
+            <label for="directoryPath">Directory Path</label>
+            <input type="text" id="directoryPath" name="directoryPath" placeholder="C:/Users/User" required/>
+        </div>
+        <div class="form-group">
+            <label for="threadsCount">Threads Count</label>
+            <input type="number" id="threadsCount" name="threadsCount" min="1" placeholder="e.g. 10"/>
+        </div>
+        <div class="form-group">
+            <label for="depthLimit">Depth Limit</label>
+            <input type="number" id="depthLimit" name="depthLimit" min="0" placeholder="e.g. 5"/>
+        </div>
+
+        <fieldset class="filter-group">
+            <legend>Filter</legend>
+
+            <div class="form-group">
+                <label for="namePattern">Name Pattern</label>
+                <input type="text" id="namePattern" name="namePattern" placeholder="*.log"/>
+            </div>
+
+            <div class="form-group inline-group">
+                <div>
+                    <label for="sizeStart">Size ≥ (bytes)</label>
+                    <input type="number" id="sizeStart" name="sizeStart" min="0"/>
+                </div>
+                <div>
+                    <label for="sizeEnd">Size ≤ (bytes)</label>
+                    <input type="number" id="sizeEnd" name="sizeEnd" min="0"/>
+                </div>
+            </div>
+
+            <div class="form-group inline-group">
+                <div>
+                    <label for="dateStart">Modified Date ≥</label>
+                    <input type="date" id="dateStart" name="dateStart"/>
+                </div>
+                <div>
+                    <label for="dateEnd">Modified Date ≤</label>
+                    <input type="date" id="dateEnd" name="dateEnd"/>
+                </div>
+            </div>
+
+            <div class="form-group inline-group">
+                <div>
+                    <label for="timeStart">Modified Time ≥</label>
+                    <input type="time" id="timeStart" name="timeStart"/>
+                </div>
+                <div>
+                    <label for="timeEnd">Modified Time ≤</label>
+                    <input type="time" id="timeEnd" name="timeEnd"/>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="textContent">Text Content (contains)</label>
+                <input type="text" id="textContent" name="textContent" placeholder="some substring"/>
+            </div>
+        </fieldset>
+
+        <div class="buttons">
+            <button type="submit" id="startBtn">Start Scan</button>
+            <button type="button" id="cancelBtn" disabled>Cancel</button>
+        </div>
+    </form>
+
+    <div id="info" class="info hidden">
+        <span id="tokenDisplay"></span>
+        <span id="timer">00:00</span>
+        <span id="count">Found: 0</span>
+    </div>
+
+    <div id="spinner" class="spinner hidden"></div>
+
+    <table id="resultsTable" class="results hidden">
+        <thead>
+        <tr><th>#</th><th>File path</th></tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <div id="error" class="error hidden"></div>
+</div>
+
+<script th:src="@{/js/file-scanner.js}"></script>
+</body>
+</html>

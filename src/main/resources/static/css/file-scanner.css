@@ -1,0 +1,136 @@
+body {
+  margin: 0;
+  padding: 0;
+  background: #f5f5f5;
+  font-family: Arial, sans-serif;
+}
+.scanner-container {
+  max-width: 720px;
+  margin: 2rem auto;
+  padding: 2rem;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+}
+.scanner-container h1 {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+.form-group {
+  margin-bottom: 1rem;
+}
+.filter-group {
+  border: 1px solid #ccc;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  border-radius: 4px;
+}
+.filter-group legend {
+  font-weight: bold;
+}
+.inline-group {
+  display: flex;
+  gap: 1rem;
+}
+.inline-group > div {
+  flex: 1;
+}
+.form-group label,
+.filter-group label {
+  display: block;
+  margin-bottom: 0.3rem;
+  font-weight: bold;
+}
+.form-group input,
+.filter-group input {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+.buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+.buttons button {
+  flex: 1;
+  padding: 0.7rem;
+  border: none;
+  border-radius: 4px;
+  font-size: 1rem;
+  cursor: pointer;
+}
+#startBtn {
+  background: #28a745;
+  color: #fff;
+}
+#cancelBtn {
+  background: #dc3545;
+  color: #fff;
+}
+#cancelBtn:disabled {
+  background: #f5a3ab;
+  cursor: not-allowed;
+}
+.info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 1.5rem 0;
+  font-size: 0.9rem;
+}
+.hidden { display: none; }
+.spinner {
+  margin: auto;
+  width: 40px;
+  height: 40px;
+  border: 4px solid #eee;
+  border-top-color: #28a745;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.results {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+}
+.results th,
+.results td {
+  border: 1px solid #ddd;
+  padding: 0.5rem;
+}
+.results th {
+  background: #f0f0f0;
+}
+.error {
+  margin-top: 1rem;
+  padding: 0.7rem;
+  background: #ffdddd;
+  color: #d8000c;
+  border-radius: 4px;
+}
+
+#resultsTable {
+  font-size: 0.8rem;
+  line-height: 1.2;
+  border-collapse: collapse;
+  width: 100%;
+}
+#resultsTable th, #resultsTable td {
+  padding: 4px 8px;
+  border: 1px solid #ccc;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+#resultsTable tr:nth-child(even) {
+  background-color: #f9f9f9;
+}
+#resultsTable tr:hover {
+  background-color: #f1f1f1;
+  cursor: pointer;
+}
+#resultsTable thead {
+  background-color: #eee;
+}

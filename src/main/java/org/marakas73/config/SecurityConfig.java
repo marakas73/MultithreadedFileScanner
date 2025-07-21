@@ -21,12 +21,12 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/login", "/css/**", "/js/**").permitAll()
-                        .requestMatchers("/api/**", "/actuator/shutdown").authenticated()
+                        .requestMatchers("/api/**", "/actuator/shutdown", "/file-scanner").authenticated()
                         .anyRequest().permitAll()
                 )
                 .formLogin(form -> form
                         .loginPage("/login")
-                        .defaultSuccessUrl("/", true)
+                        .defaultSuccessUrl("/file-scanner", true)
                         .permitAll()
                 )
                 .logout(logout -> logout
