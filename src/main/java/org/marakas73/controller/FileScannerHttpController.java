@@ -54,18 +54,20 @@ public class FileScannerHttpController {
 
     @GetMapping("/{token}")
     public ResponseEntity<ResponseWrapper<FileScanResult>> getResult(@PathVariable String token) {
+    public ResponseEntity<ResponseWrapper<FileScanResponseDto>> getResult(@PathVariable String token) {
         try{
             FileScanResult result = fileScanner.getResult(token);
 
             if (result == null) {
                 return ResponseEntity.notFound().build();
             }
+            var resultDto = fileScanResultMapper.toResponseDto(result);
 
-            if (result.completed()) {
-                return ResponseEntity.ok(new ResponseWrapper<>(ResponseStatus.SUCCESS, Map.of(), result));
+            if (resultDto.completed()) {
+                return ResponseEntity.ok(new ResponseWrapper<>(ResponseStatus.SUCCESS, Map.of(), resultDto));
             } else {
                 return ResponseEntity.status(HttpStatus.ACCEPTED)
-                        .body(new ResponseWrapper<>(ResponseStatus.SUCCESS, Map.of(), result));
+                        .body(new ResponseWrapper<>(ResponseStatus.SUCCESS, Map.of(), resultDto));
             }
         } catch (RuntimeException e) {
             Map<String, String> error = Map.of(
